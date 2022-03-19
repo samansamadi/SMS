@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   int PERMISSION_ALL = 1;
 
   EditText toBeSent, receiver, webservice;
-  TextView textView;
+  TextView textView, url, lastCall;
   Button submit, submitWebservice;
   TinyDB tinyDB;
   ArrayList<String> numbers;
@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     getWindow().addFlags(6815873);
 
     showExistingNumbers();
+    showUrl();
+    showLastCall();
   }
 
   private void initView() {
@@ -47,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     submit = findViewById(R.id.button);
     submitWebservice = findViewById(R.id.btnWebservice);
     textView = findViewById(R.id.txtNumbers);
+    url = findViewById(R.id.txtUrl);
+    lastCall = findViewById(R.id.txtLastCall);
 
     submit.setOnClickListener(this);
     submitWebservice.setOnClickListener(this);
@@ -63,7 +67,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     for (String number : numbers)
       numberString += "\n" + number;
 
-    textView.setText("Existing Number: \n" + numberString);
+    textView.setText("Existing Numbers: \n" + numberString);
+  }
+
+  private void showUrl() {
+    String url = tinyDB.getString("webservice");
+    this.url.setText(url);
+  }
+
+  private void showLastCall() {
+    String lastCall = tinyDB.getString("last_call");
+    this.lastCall.setText(lastCall);
   }
 
   public static boolean hasPermissions(Context context, String... strArr) {
@@ -102,6 +116,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
           tinyDB.putString("receiver", receiver.getText().toString());
           Toast.makeText(this, "receiver saved", Toast.LENGTH_SHORT).show();
         }
+        showUrl();
+        showLastCall();
         break;
       case R.id.btnWebservice:
         try {
@@ -110,6 +126,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tinyDB.putString("webservice", webservice.getText().toString());
             Toast.makeText(this, "Webservice changed", Toast.LENGTH_LONG).show();
           }
+
+          showUrl();
+          showLastCall();
         } catch (Exception e) {
           e.printStackTrace();
           Toast.makeText(this, "Exception: " + e.getMessage(), Toast.LENGTH_LONG).show();

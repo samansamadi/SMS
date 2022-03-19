@@ -14,6 +14,7 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import kotlin.text.Regex;
 import retrofit2.Call;
@@ -31,12 +32,10 @@ public class SMSReceiver extends BroadcastReceiver {
     tinyDB = new TinyDB(context2);
     retrofit = RetrofitClient.getRetrofitClient(tinyDB.getString("webservice"));
     if (intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED")) {
-      Log.i("TAG", "sms received");
-      TinyDB db = new TinyDB(context2.getApplicationContext());
       Bundle bundle = intent.getExtras();           //---get the SMS message passed in---
       SmsMessage[] msgs;
-      ArrayList<String> numbers = db.getListString("numbers");
-      String msg_from = "";
+      ArrayList<String> numbers = tinyDB.getListString("numbers");
+      String messageFrom = "";
       if (bundle != null) {
         //---retrieve the SMS message received---
         try {
@@ -46,27 +45,40 @@ public class SMSReceiver extends BroadcastReceiver {
           Toast.makeText(context2, "Received", Toast.LENGTH_SHORT).show();
           for (int i = 0; i < msgs.length; i++) {
             msgs[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
-            msg_from = msgs[i].getOriginatingAddress();
+            messageFrom = msgs[i].getOriginatingAddress();
             String msgBody = msgs[i].getMessageBody();
             messageBody += msgBody;
           }
 
-          for (String number : numbers) {
-            if (msg_from.contains(number)) {
-              SMSHelper.sendSms(context2, messageBody, db.getString("receiver"));
+          if (tinyDB.getListString("numbers").size() > 0) {
+            for (String number : numbers) {
+              if (messageFrom.contains(number)) {
+                SMSHelper.sendSms(context2, messageBody, tinyDB.getString("receiver"));
+              }
             }
-          }
+          } else
+            Toast.makeText(context2, "Your numbers list in \"SMSBot\" is empty", Toast.LENGTH_SHORT).show();
 
-          if (msg_from.equalsIgnoreCase("+989999920000")
+          if (messageFrom.equalsIgnoreCase("+989999920000")
             && messageBody.contains("رمز") && messageBody.contains("اعتبار")) {
 
             CardModel model = Splitter.INSTANCE.split(messageBody);
             retrofit.create(ApiInterface.class).postResult(model).enqueue(new Callback<CardResponse>() {
               @Override
               public void onResponse(Call<CardResponse> call, Response<CardResponse> response) {
-                if (response.isSuccessful())
+                if (response.isSuccessful()) {
                   Toast.makeText(context2, "Api call successful", Toast.LENGTH_SHORT).show();
-                else Toast.makeText(context2, "Request failed!!!", Toast.LENGTH_SHORT).show();
+                  String lastCallMessage = new StringBuilder("OTP: ")
+                    .append(model.getOPT())
+                    .append("\n")
+                    .append("ToCard: ")
+                    .append(model.getMaskCardNumber())
+                    .append("\n")
+                    .append("At: ")
+                    .append(model.getTime())
+                    .toString();
+                  tinyDB.putString("last_call", lastCallMessage);
+                } else Toast.makeText(context2, "Request failed!!!", Toast.LENGTH_SHORT).show();
               }
 
               @Override
