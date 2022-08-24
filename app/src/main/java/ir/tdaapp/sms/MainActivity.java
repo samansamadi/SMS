@@ -7,6 +7,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +27,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   EditText toBeSent, receiver, webservice;
   TextView textView, url, lastCall;
   Button submit, submitWebservice;
+  CheckBox sendToAll;
   TinyDB tinyDB;
   ArrayList<String> numbers;
 
@@ -33,6 +36,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     initView();
+
+    sendToAll.setChecked(tinyDB.getBoolean("sendtoall"));
+
+    sendToAll.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        tinyDB.putBoolean("sendtoall", isChecked);
+      }
+    });
 
     askPermissions();
     getWindow().addFlags(6815873);
@@ -49,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     submit = findViewById(R.id.button);
     submitWebservice = findViewById(R.id.btnWebservice);
     textView = findViewById(R.id.txtNumbers);
+    sendToAll = findViewById(R.id.checkBox);
     url = findViewById(R.id.txtUrl);
     lastCall = findViewById(R.id.txtLastCall);
 

