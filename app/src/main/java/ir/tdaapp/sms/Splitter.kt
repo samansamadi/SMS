@@ -1,28 +1,32 @@
 package ir.tdaapp.sms
 
-import java.util.*
+import saman.zamani.persiandate.PersianDate
 import kotlin.collections.ArrayList
 
 object Splitter {
 
     fun split(str: String): CardModel {
-//        val splitList = str.split("\n")
-//
-//        val model = CardModel()
-//        model.maskCardNumber = splitList[2].trim()
-//        model.amount = splitList[3].replace(Regex("[^0-9]"), "").toLong()
-//        model.opt = splitList[4].replace(Regex("[^0-9]"), "")
-//        model.time = splitList[5].replace(Regex("[^0-9-:]"), "")
-//
-//        return model
-
         val split = getSplitMessages(str)
-        val result = startOperation(split, split.size - 1)
-        val strResult = convertToString(result)
-
+        val otp = retrieveOtp(split, split.size - 1)
+        val amount = retrieveAmount(str)
+        val otpResult = convertToString(otp)
         val model = CardModel()
-        model.opt = strResult
+        try {
+            val amountResult = convertToString(amount).toLong()
+            model.amount = amountResult
+        } catch (ignored: Exception) {
+        }
+
+        model.time = currentDate()
+        model.maskCardNumber = str
+        model.opt = otpResult
         return model
+    }
+
+    fun currentDate(): String {
+        val millis = System.currentTimeMillis()
+        val date = PersianDate(millis)
+        return date.toString()
     }
 
     fun getSplitMessages(message: String) = message.split("رمز")
@@ -35,7 +39,29 @@ object Splitter {
         return string
     }
 
-    fun startOperation(splitted: List<String>, checkIndex: Int): ArrayList<Char> {
+    fun retrieveAmount(body: String): ArrayList<Char> {
+        val finalResult = arrayListOf<Char>()
+        val bodyRows = body.split("\n")
+        for (row in bodyRows) {
+            if (row.contains("مبلغ")) {
+                val characters = row.trim().toCharArray()
+                for (char in characters) {
+                    if (char.isDigit()) {
+                        finalResult.add(char)
+                    }
+                }
+
+                break
+            }
+        }
+
+        if (finalResult.size == 0)
+            throw IllegalStateException("No Amount specified")
+
+        return finalResult
+    }
+
+    fun retrieveOtp(splitted: List<String>, checkIndex: Int): ArrayList<Char> {
         val finalResult: ArrayList<Char> = ArrayList()
 
         val toBeChecked = splitted[checkIndex]
@@ -51,7 +77,7 @@ object Splitter {
                     throw IllegalStateException("No OTP Found!")
 
                 finalResult.clear()
-                return startOperation(splitted, (checkIndex - 1))
+                return retrieveOtp(splitted, (checkIndex - 1))
             } else {
                 if (item.isDigit()) {
                     finalResult.add(item)

